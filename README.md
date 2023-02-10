@@ -30,13 +30,16 @@ pmdm-bitwarden.env
 ## Usage
 
 pmdm config (interactive)
-  // what password manager, okay make sure the CLI is installed, okay log in to it, what vault, what folder/tag
-pmdm add <path>
+  // what base directory? (default home) (files outside of this directory will expect the same full path on all systems), what password manager, okay make sure the CLI is installed, any "extra args" (self-hosted BW for instance), okay log in to it, what vault, what folder/tag
+pmdm add <path> (add a new file AND push to upstream)
 pmdm sync (interactive)
 pmdm sync --prefer-upstream
 pmdm sync --prefer-local
 pmdm rm <path>
 // TODO: difference between removing it from the local filesystem/unlinking it and purging it from the password manager?
+// TODO: what does unlinking look like? probably an entry in pmdm.env? (nah, a new local-only "files-to-skip.txt" or some such)
+
+Note: this won't warn you about any conflicts when pushing, it'll just overwrite with whichever you specify
 
 Note: These instructions assume that you have symlinked the script such that it is available on your path.
 If you have not, simply replace `pmdm` with `~/.local/bin/password-manager-dotfiles-manager.sh` in the commands.
