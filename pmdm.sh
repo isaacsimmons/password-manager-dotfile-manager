@@ -26,6 +26,44 @@ print-usage() {
   exiterr "Usage message goes here"
 }
 
+find-longest-root-directory-prefix() {
+  REL_PATH="${1}"
+  ABS_PATH=""
+  LONGEST_PREXIX_ALIAS=""
+  LONGEST_PREFIX_LENGTH=0
+
+  # TODO: implement this
+  # loop over PMDM_ROOT_DIRECTORIES {
+  #   if absPath.startsWith rootDir.path && rootDir.path.length > LONGEST_PREFIX_LENGTH {
+  #     LONGEST_PREFIX_ALIAS=rootDir.alias
+  #     LONGEST_PREFIX_LENGTH=rootDir.path.length
+  #   }
+  # }
+
+  echo "${LONGEST_PREFIX_ALIAS}"
+}
+
+to-abs-path() {  
+  if [[ "${1}" == "." ]]; then
+    echo "${PWD}"
+  elif [[ "${1}" == ".." ]]; then
+    echo "$(dirname "${PWD}")"
+  else
+    echo "$( cd "$(dirname "${1}")"; pwd )/$( basename "${1}" )"
+  fi
+}
+
+extract-root-directories() {
+  require-env PMDM_ROOT_DIRECTORIES
+  unset ROOT_DIRECTORY_MAP
+  eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
+  export ROOT_DIRECTORY_MAP
+}
+
+pack-root-directories() {
+  PMDM_ROOT_DIRECTORIES="$( declare -p ROOT_DIRECTORY_MAP | sed 's/^.*(//;s/)$//' )"
+}
+
 do-config() {
   # ask for password manager (default to current value if set)
   PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
@@ -35,6 +73,49 @@ do-config() {
   # Update the config file if they answered anything but the default
   [[ -n "${PASSWORD_MANAGER_INPUT}" ]] && write-config
 
+  # Apply a default if the root directories aren't yet set
+  if [[ -z "${PMDM_ROOT_DIRECTORIES:-}" ]]; then
+    PMDM_ROOT_DIRECTORIES="[HOME]=\"${HOME}\""
+    write-config
+  fi
+
+  # extract-root-directories
+  require-env PMDM_ROOT_DIRECTORIES
+  unset ROOT_DIRECTORY_MAP
+  eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
+
+  echo "Any files stored in named root directories will be referred to by relative path instead of absolute path"
+  while true; do
+    # Print existing directories
+    # echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/:/\n/g" # FIXME: this 'sed' doesn't work with the new assoc array syntax
+    declare -p ROOT_DIRECTORY_MAP
+
+    read -p "Enter an existing alias to modify or delete it, enter a new alias to create a new root directory, or nothing to continue: " ALIAS_INPUT
+    if [[ -z "${ALIAS_INPUT}" ]]; then
+      break;
+    fi
+
+
+    if [[ -v "ROOT_DIRECTORY_MAP[${ALIAS_INPUT}]" ]]; then # An existing alias
+      read -p "Enter a new path to modify ${ALIAS_INPUT} or leave blank to remove: " PATH_INPUT
+      if [[ -z "${ALIAS_INPUT}" ]]; then
+        # Remove an existing value
+        unset ROOT_DIRECTORY_MAP[$ALIAS_INPUT]
+      else
+        # Update an existing value
+        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="$( to-abs-path "${PATH_INPUT}" )"
+      fi
+    else # Add a new value (fix these comments)
+      read -p "Enter path for ${ALIAS_INPUT}: " PATH_INPUT
+      if [[ -n "${PATH_INPUT}" ]]; then
+        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="$( to-abs-path "${PATH_INPUT}" )"
+      fi
+    fi
+
+    pack-root-directories
+    write-config
+  done
+
   source-password-manager-implementation
   ensure-password-manager-installed
   ensure-password-manager-logged-in
@@ -42,6 +123,7 @@ do-config() {
 }
 
 source-password-manager-implementation() {
+  require-env PASSWORD_MANAGER
   case "${PASSWORD_MANAGER}" in
     "bw")
       source "${SCRIPT_DIR}/pmdm-bitwarden.sh"
@@ -56,8 +138,8 @@ source-password-manager-implementation() {
 }
 
 write-config() {
-  echo "MY_OWN_PATH=\"${CONFIG_FILE}\"
-PASSWORD_MANAGER=\"${PASSWORD_MANAGER:-}\"
+  echo "PASSWORD_MANAGER=\"${PASSWORD_MANAGER:-}\"
+PMDM_ROOT_DIRECTORIES=\"$( echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/\"/\\\\\"/g")\"
 " > "${CONFIG_FILE}"
 }
 
@@ -80,11 +162,26 @@ if [[ "${COMMAND}" == "config" ]]; then
   exit 0
 fi
 
-# Make sure the password manager is set and configured
-require-env PASSWORD_MANAGER
 source-password-manager-implementation
+extract-root-directories
+
 ensure-password-manager-installed
 ensure-password-manager-logged-in
 assert-password-manager-configured
 
 # then a big case statement for $COMMAND and do the thing that was asked of me
+case "${PASSWORD_MANAGER}" in
+  "add")
+    echo "TODO: add a file"
+     ;;
+  "rm")
+    echo "TODO: remove a file"
+     ;;
+  "sync")
+    echo "TODO: sync files"
+    ;;
+  *)
+    echo "Unknown command ${COMMAND}"
+    print-usage
+    ;;
+esac
