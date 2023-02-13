@@ -27,19 +27,18 @@ print-usage() {
 }
 
 do-config() {
-  echo "doing config!"
   # ask for password manager (default to current value if set)
   PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
   read -p "What password manager would you like to use (op, bw) [${PASSWORD_MANAGER}]: " PASSWORD_MANAGER_INPUT
   PASSWORD_MANAGER="${PASSWORD_MANAGER_INPUT:-$PASSWORD_MANAGER}"
+
+  # Update the config file if they answered anything but the default
   [[ -n "${PASSWORD_MANAGER_INPUT}" ]] && write-config
 
   source-password-manager-implementation
   ensure-password-manager-installed
   ensure-password-manager-logged-in
   configure-password-manager
-
-  # anytime they answer something other than the default, call write-config
 }
 
 source-password-manager-implementation() {
@@ -58,7 +57,8 @@ source-password-manager-implementation() {
 
 write-config() {
   echo "MY_OWN_PATH=\"${CONFIG_FILE}\"
-PASSWORD_MANAGER=\"${PASSWORD_MANAGER}\"" > "${CONFIG_FILE}"
+PASSWORD_MANAGER=\"${PASSWORD_MANAGER:-}\"
+" > "${CONFIG_FILE}"
 }
 
 ###### DONE FUNCTION DEFINITIONS #########
