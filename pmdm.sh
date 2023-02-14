@@ -47,7 +47,6 @@ extract-root-directories() {
   require-env PMDM_ROOT_DIRECTORIES
   unset ROOT_DIRECTORY_MAP
   eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
-  export ROOT_DIRECTORY_MAP
 }
 
 pack-root-directories() {
