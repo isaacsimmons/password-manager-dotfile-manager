@@ -43,16 +43,6 @@ find-longest-root-directory-prefix() {
   echo "${LONGEST_PREFIX_ALIAS}"
 }
 
-to-abs-path() {  
-  if [[ "${1}" == "." ]]; then
-    echo "${PWD}"
-  elif [[ "${1}" == ".." ]]; then
-    echo "$(dirname "${PWD}")"
-  else
-    echo "$( cd "$(dirname "${1}")"; pwd )/$( basename "${1}" )"
-  fi
-}
-
 extract-root-directories() {
   require-env PMDM_ROOT_DIRECTORIES
   unset ROOT_DIRECTORY_MAP
@@ -90,25 +80,24 @@ do-config() {
     # echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/:/\n/g" # FIXME: this 'sed' doesn't work with the new assoc array syntax
     declare -p ROOT_DIRECTORY_MAP
 
-    read -p "Enter an existing alias to modify or delete it, enter a new alias to create a new root directory, or nothing to continue: " ALIAS_INPUT
+    read -p "Enter an existing alias to modify or delete it, a new alias to create a new root directory, or nothing to continue: " ALIAS_INPUT
     if [[ -z "${ALIAS_INPUT}" ]]; then
       break;
     fi
 
-
-    if [[ -v "ROOT_DIRECTORY_MAP[${ALIAS_INPUT}]" ]]; then # An existing alias
-      read -p "Enter a new path to modify ${ALIAS_INPUT} or leave blank to remove: " PATH_INPUT
-      if [[ -z "${ALIAS_INPUT}" ]]; then
+    if [[ -n "${ROOT_DIRECTORY_MAP[${ALIAS_INPUT}]:-}" ]]; then # An existing alias
+      read -p "Enter a new absolute path to modify ${ALIAS_INPUT} or leave blank to remove: " PATH_INPUT
+      if [[ -z "${PATH_INPUT}" ]]; then
         # Remove an existing value
         unset ROOT_DIRECTORY_MAP[$ALIAS_INPUT]
       else
         # Update an existing value
-        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="$( to-abs-path "${PATH_INPUT}" )"
+        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="${PATH_INPUT}"
       fi
     else # Add a new value (fix these comments)
-      read -p "Enter path for ${ALIAS_INPUT}: " PATH_INPUT
+      read -p "Enter absolute path for ${ALIAS_INPUT}: " PATH_INPUT
       if [[ -n "${PATH_INPUT}" ]]; then
-        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="$( to-abs-path "${PATH_INPUT}" )"
+        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="${PATH_INPUT}"
       fi
     fi
 
@@ -156,7 +145,7 @@ COMMAND="${1:-}"
 
 [[ -n "$COMMAND" ]] || print-usage
 
-# Special check for "config" command first before we require a bunch of configuration values
+# Special check for "config" command first before we make assertions about being properly configured
 if [[ "${COMMAND}" == "config" ]]; then
   do-config
   exit 0
