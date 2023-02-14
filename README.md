@@ -5,6 +5,7 @@ Simple -- lots of other good options out there but honestly I don't want most of
 Secure -- you already trust your password manager to store secure values and to synchronize them between computers.
 Private -- honestly, even with encryption or templating, I don't really want my dotfiles in a public git repo, and putting them in a private repo adds another layer of authentication to the setup process.
 Multi-machine -- again, your password manager provides this for you already.
+If you're just storing your .vimrc or whatever that's fine -- share away, but my development environments often contain secrets that I don't want to just throw into a git repository.
 
 # Dependencies
 
@@ -20,11 +21,11 @@ In addition, to use the one-line install script below, you will need:
 
 ## Installing
 
-    mkdir -p ~/.local/share/dev-init && curl -SsL https://api.github.com/repos/isaacsimmons/github-dev-init/tarball/main | tar xz --strip-components=1 -C ~/.local/share/dev-init
+    mkdir -p ~/.local/share/dev-init && curl -SsL https://api.github.com/repos/isaacsimmons/password-manager-dotfile-manager/tarball/main | tar xz --strip-components=1 -C ~/.local/share/password-manager-dotfile-manager
 
 Optional: symlink this somewhere on your path
 
-    ln -s ~/.local/share/dev-init/install.sh ~/bin/dev-init
+    ln -s ~/.local/share/password-manager-dotfile-manager/pmdm.sh ~/bin/pmdm
 
 You can also clone the repo instead of using the one-liner install.
 
