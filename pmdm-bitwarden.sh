@@ -81,12 +81,15 @@ ensure-password-manager-logged-in() {
 }
 
 configure-password-manager() {
-  local DEFAULT_FOLDER_NAME="Dotfiles"
+  local DEFAULT_FOLDER_NAME="dotfiles"
   # TODO: scope a ton of variables in all these files as 'local'?
 
   ID_MATCH_ROW=""
   DEFAULT_NAME_MATCH_ROW=""
   echo "Select a folder for pmdm to store its data in:"
+
+  OLD_FOLDER_ID="${BITWARDEN_FOLDER_ID:-}"
+
   ROW=1
   while read FOLDER_LINE; do
     # Split the line to get ID and Name
@@ -115,11 +118,10 @@ configure-password-manager() {
     # TODO: do I need an "export" to use this immediately? (also, maybe I don't care?)
     BITWARDEN_FOLDER_ID="${FOLDER_IDS[$FOLDER_INPUT]}"
   else # Not a number, must be a name for a new folder
-    bw create folder whatever
-    does it return the ID? if not look it up and save it
+    BITWARDEN_FOLDER_ID="$( bw get template folder | jq ".name=\"${FOLDER_INPUT}\"" | bw encode | bw create folder | jq -r ".id" )"
   fi
 
-  if [[ -n "${RAW_FOLDER_INPUT}" ]]; then
+  if [[ "${OLD_FOLDER_ID}" != "${BITWARDEN_FOLDER_ID}" ]]; then
     write-password-manager-config
   fi
 }

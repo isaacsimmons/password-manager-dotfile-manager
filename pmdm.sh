@@ -141,6 +141,7 @@ PMDM_ROOT_DIRECTORIES=\"$( echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/\"/\\\\\"/g"
 [[ -f "${CONFIG_FILE}" ]] && source "${CONFIG_FILE}"
 
 COMMAND="${1:-}"
+shift
 
 [[ -n "$COMMAND" ]] || print-usage
 
@@ -160,13 +161,21 @@ assert-password-manager-configured
 # then a big case statement for $COMMAND and do the thing that was asked of me
 case "${PASSWORD_MANAGER}" in
   "add")
+    # add a new file or update an existing file
+    # immediately push to password manager
     echo "TODO: add a file"
-     ;;
+    ;;
   "rm")
     echo "TODO: remove a file"
-     ;;
+    # remove a file from the password manager
+    # take some flag to also rm the local copy?
+    ;;
   "sync")
     echo "TODO: sync files"
+    # check for --prefer-local or --prefer-remote flag
+    # loop through everything in password manager vault
+    # check if the local file exists
+    # 
     ;;
   *)
     echo "Unknown command ${COMMAND}"

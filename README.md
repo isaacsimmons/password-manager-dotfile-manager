@@ -1,4 +1,4 @@
-# Password Manager Dotfiles Manager
+# Password Manager Dotfile Manager
 
 This is designed to be a super-barebones dotfile manager that stores all of your dotfiles as secure notes in your password manager of choice.
 Simple -- lots of other good options out there but honestly I don't want most of the capabilities that they come with.
