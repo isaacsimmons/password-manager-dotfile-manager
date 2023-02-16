@@ -8,7 +8,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/password-manager-dotfile-manager"
 CONFIG_FILE="${CONFIG_DIR}/pmdm.env"
-echo "Using config in ${CONFIG_DIR}/"
 
 # Define some helper functions
 exiterr() {
@@ -26,33 +25,6 @@ print-usage() {
   exiterr "Usage message goes here"
 }
 
-find-longest-root-directory-prefix() {
-  REL_PATH="${1}"
-  ABS_PATH=""
-  LONGEST_PREXIX_ALIAS=""
-  LONGEST_PREFIX_LENGTH=0
-
-  # TODO: implement this
-  # loop over PMDM_ROOT_DIRECTORIES {
-  #   if absPath.startsWith rootDir.path && rootDir.path.length > LONGEST_PREFIX_LENGTH {
-  #     LONGEST_PREFIX_ALIAS=rootDir.alias
-  #     LONGEST_PREFIX_LENGTH=rootDir.path.length
-  #   }
-  # }
-
-  echo "${LONGEST_PREFIX_ALIAS}"
-}
-
-extract-root-directories() {
-  require-env PMDM_ROOT_DIRECTORIES
-  unset ROOT_DIRECTORY_MAP
-  eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
-}
-
-pack-root-directories() {
-  PMDM_ROOT_DIRECTORIES="$( declare -p ROOT_DIRECTORY_MAP | sed 's/^.*(//;s/)$//' )"
-}
-
 do-config() {
   # ask for password manager (default to current value if set)
   PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
@@ -68,16 +40,16 @@ do-config() {
     write-config
   fi
 
-  # extract-root-directories
   require-env PMDM_ROOT_DIRECTORIES
-  unset ROOT_DIRECTORY_MAP
   eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
 
   echo "Any files stored in named root directories will be referred to by relative path instead of absolute path"
   while true; do
     # Print existing directories
-    # echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/:/\n/g" # FIXME: this 'sed' doesn't work with the new assoc array syntax
-    declare -p ROOT_DIRECTORY_MAP
+    for ALIAS_PREFIX in "${!ROOT_DIRECTORY_MAP[@]}"
+    do
+      echo "[${ALIAS_PREFIX}] ${ROOT_DIRECTORY_MAP[$ALIAS_PREFIX]}"
+    done
 
     read -p "Enter an existing alias to modify or delete it, a new alias to create a new root directory, or nothing to continue: " ALIAS_INPUT
     if [[ -z "${ALIAS_INPUT}" ]]; then
@@ -100,7 +72,7 @@ do-config() {
       fi
     fi
 
-    pack-root-directories
+    PMDM_ROOT_DIRECTORIES="$( declare -p ROOT_DIRECTORY_MAP | sed 's/^.*(//;s/)$//' )"
     write-config
   done
 
@@ -131,6 +103,44 @@ PMDM_ROOT_DIRECTORIES=\"$( echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/\"/\\\\\"/g"
 " > "${CONFIG_FILE}"
 }
 
+# Takes an absolute filesystem path and checks it against the ROOT_DIRECTORY aliases, possibly shortening it
+create-item-name() {
+  local ABS_PATH="${1}"
+
+  # Since prefixes can be subsets of eachother, look for the most specific/longest matching one
+  LONGEST_PREFIX_ALIAS=""
+  LONGEST_PREFIX_LENGTH=0
+  for ALIAS_PREFIX in "${!ROOT_DIRECTORY_MAP[@]}"
+  do
+    ALIAS_PATH="${ROOT_DIRECTORY_MAP[$ALIAS_PREFIX]%/}" # Drop trailing / if one was present
+
+    if [[ "${ABS_PATH}" == "${ALIAS_PATH}"* ]] && [[ ${#ALIAS_PATH} -gt "${LONGEST_PREFIX_LENGTH}" ]]; then
+      LONGEST_PREFIX_ALIAS="${ALIAS_PREFIX}"
+      LONGEST_PREFIX_LENGTH="${#ALIAS_PATH}"
+    fi
+  done
+
+  # TODO: should I even allow absolute paths that don't match any root directory?
+
+  echo "${LONGEST_PREFIX_ALIAS}$( echo "${ABS_PATH}" | cut -c$(( ${LONGEST_PREFIX_LENGTH} + 1 ))- )"
+}
+
+to-abs-path() {
+  local REL_PATH="${1}"
+
+  if [[ -d "${REL_PATH}" ]]; then
+    (cd "${REL_PATH}"; pwd)
+  elif [[ -f "${REL_PATH}" ]]; then
+    if [[ "${REL_PATH}" == /* ]]; then
+      echo "${REL_PATH}"
+    elif [[ ${REL_PATH} == */* ]]; then
+      echo "$(cd "${REL_PATH%/*}"; pwd)/${REL_PATH##*/}"
+    else
+      echo "${PWD}/${REL_PATH}"
+    fi
+  fi
+}
+
 ###### DONE FUNCTION DEFINITIONS #########
 
 [[ "${EUID}" -eq 0 ]] && exiterr "Don't run this as root"
@@ -152,18 +162,27 @@ if [[ "${COMMAND}" == "config" ]]; then
 fi
 
 source-password-manager-implementation
-extract-root-directories
+
+require-env PMDM_ROOT_DIRECTORIES
+eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
 
 ensure-password-manager-installed
 ensure-password-manager-logged-in
 assert-password-manager-configured
 
 # then a big case statement for $COMMAND and do the thing that was asked of me
-case "${PASSWORD_MANAGER}" in
+case "${COMMAND}" in
   "add")
     # add a new file or update an existing file
     # immediately push to password manager
+    [[ -z "${1:-}" ]] && print-usage
     echo "TODO: add a file"
+    [[ -f "${1}" ]] || exiterr "${1}: file not found"
+
+    ABS_PATH="$( to-abs-path "$1" )"
+    ITEM_NAME="$( create-item-name "$ABS_PATH" )"
+
+    echo create-password-manager-item "${ITEM_NAME}" "${ABS_PATH}"
     ;;
   "rm")
     echo "TODO: remove a file"
@@ -175,7 +194,7 @@ case "${PASSWORD_MANAGER}" in
     # check for --prefer-local or --prefer-remote flag
     # loop through everything in password manager vault
     # check if the local file exists
-    # 
+    #
     ;;
   *)
     echo "Unknown command ${COMMAND}"
