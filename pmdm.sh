@@ -27,7 +27,7 @@ print-usage() {
 
 do-config() {
 
-TODO: Rip out a ton of this and just make them config things manually?
+# TODO: Rip out a ton of this and just make them config things manually?
 
 
   # ask for password manager (default to current value if set)
@@ -186,7 +186,7 @@ case "${COMMAND}" in
     ABS_PATH="$( to-abs-path "$1" )"
     ITEM_NAME="$( create-item-name "$ABS_PATH" )"
 
-    echo create-password-manager-item "${ITEM_NAME}" "${ABS_PATH}"
+    upsert-password-manager-item "${ITEM_NAME}" "${ABS_PATH}"
     ;;
   "rm")
     echo "TODO: remove a file"

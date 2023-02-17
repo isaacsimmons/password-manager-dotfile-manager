@@ -141,13 +141,17 @@ upsert-password-manager-item() {
 
   JSON_FILE_CONTENTS="$( jq -Rs '.' ${FILE_PATH} )"
 
-  look for an existing one first
+  # Look up exisiting object with a combination of bw CLI fuzzy search and jq filtering
+  EXISTING_ITEM_ID="$( bw list items --folderid "${BITWARDEN_FOLDER_ID}" --search "${ITEM_NAME}" | jq -r ".[] | select(.name == \"${ITEM_NAME}\" and .type == 2) | .id" )"
 
-
-  # create new
-  bw get template item | jq '.type = 2 | .secureNote.type = 0 | .notes = "Contents of my Secure Note." | .name = "My Secure Note"' | bw encode | bw create item
-
-      # BITWARDEN_FOLDER_ID="$( bw get template folder | jq ".name=\"${FOLDER_INPUT}\"" | bw encode | bw create folder | jq -r ".id" )"
+  if [[ -n "${EXISTING_ITEM_ID}" ]]; then
+    # Edit the existing item
+    # bw get item "${EXISTING_ITEM_ID}" | jq '.login.password="newp@ssw0rd"' | bw encode | bw edit item "${EXISTING_ITEM_ID}"
+    echo "updating/editing not supported"
+  else
+    # Create a new item
+    bw get template item | jq ".type = 2 | .secureNote.type = 0 | .notes = ${JSON_FILE_CONTENTS} | .name = \"${ITEM_NAME}\" | .folderId = \"${BITWARDEN_FOLDER_ID}\"" | bw encode | bw create item
+  fi
 }
 
 delete-password-manager-item() {
@@ -160,6 +164,7 @@ delete-password-manager-item() {
 list-password-manager-items() {
   # just spit out a list of all the names of notes in the folder
   # maybe its name/ID pairs
+  echo "unimplemented"
 }
 
 # assumes parent folder for path already exists
