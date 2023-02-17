@@ -15,10 +15,10 @@ install-bitwarden-cli() {
   [[ "$(getconf LONG_BIT)" == "64" ]] || exiterr "Unsupported architecture. Please install bitwarden CLI manually"
   case "${OSTYPE}" in
     "linux-gnu"*)
-      exiterr "does exiterr even work here?"
+      exiterr "unimplemented"
       ;;
     "darwin"*)
-      exiterr "does exiterr even work here?"
+      exiterr "unimplemented"
       ;;
     "msys") # What about other windows bash flavors? WSL2?
       rm -f /tmp/bw.zip
@@ -62,7 +62,11 @@ ensure-password-manager-installed() {
 
   UPDATE_URL="$(bw update --raw)"
   if [[ -n "${UPDATE_URL}" ]]; then
-    exiterr "CLI auto-update not supported"
+    # Ignore the returned update URL, just reinstall from scratch
+    # FIXME: untested
+    # do I need to rm the old file first? will this overwrite?
+    echo "Auto-updating Bitwarden CLI"
+    install-bitwarden-cli
   fi
 }
 
@@ -131,10 +135,48 @@ assert-password-manager-configured() {
   require-env BITWARDEN_FOLDER_ID
 }
 
+upsert-password-manager-item() {
+  local ITEM_NAME="${1}"
+  local FILE_PATH="${2}"
+
+  JSON_FILE_CONTENTS="$( jq -Rs '.' ${FILE_PATH} )"
+
+  look for an existing one first
+
+
+  # create new
+  bw get template item | jq '.type = 2 | .secureNote.type = 0 | .notes = "Contents of my Secure Note." | .name = "My Secure Note"' | bw encode | bw create item
+
+      # BITWARDEN_FOLDER_ID="$( bw get template folder | jq ".name=\"${FOLDER_INPUT}\"" | bw encode | bw create folder | jq -r ".id" )"
+}
+
+delete-password-manager-item() {
+  local ITEM_NAME="${1}"
+
+  find the ID
+  delete it
+}
+
+list-password-manager-items() {
+  # just spit out a list of all the names of notes in the folder
+  # maybe its name/ID pairs
+}
+
+# assumes parent folder for path already exists
+# will blindly overwrite -- you should check ahead of time if that's not what you want
+get-password-manager-item() {
+  local ITEM_NAME="${1}"
+  local FILE_PATH="${2}"
+
+}
+
+# something for sync?
+# is it just a combination of "list" and "check if its changed", "get" and "upsert"
+
+
 # Done Function Definitions
 
 # If config file exists, source it
 [[ -f "${BITWARDEN_CONFIG_FILE}" ]] && source "${BITWARDEN_CONFIG_FILE}"
 
 # TODO: bw config server https://self.hosted.server.hostname
-# TODO: non-text files with attachments instead of secure notes? (requires premium though)

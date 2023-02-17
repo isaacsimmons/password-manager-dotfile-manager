@@ -26,6 +26,10 @@ print-usage() {
 }
 
 do-config() {
+
+TODO: Rip out a ton of this and just make them config things manually?
+
+
   # ask for password manager (default to current value if set)
   PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
   read -p "What password manager would you like to use (op, bw) [${PASSWORD_MANAGER}]: " PASSWORD_MANAGER_INPUT
