@@ -180,7 +180,6 @@ case "${COMMAND}" in
     # add a new file or update an existing file
     # immediately push to password manager
     [[ -z "${1:-}" ]] && print-usage
-    echo "TODO: add a file"
     [[ -f "${1}" ]] || exiterr "${1}: file not found"
 
     ABS_PATH="$( to-abs-path "$1" )"
@@ -189,9 +188,13 @@ case "${COMMAND}" in
     upsert-password-manager-item "${ITEM_NAME}" "${ABS_PATH}"
     ;;
   "rm")
-    echo "TODO: remove a file"
-    # remove a file from the password manager
-    # take some flag to also rm the local copy?
+    [[ -z "${1:-}" ]] && print-usage
+
+    ABS_PATH="$( to-abs-path "$1" )"
+    ITEM_NAME="$( create-item-name "$ABS_PATH" )"
+
+    delete-password-manager-item "${ITEM_NAME}"
+    # TODO: take some flag to also rm the local copy?
     ;;
   "sync")
     echo "TODO: sync files"

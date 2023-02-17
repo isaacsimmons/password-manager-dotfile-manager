@@ -135,6 +135,12 @@ assert-password-manager-configured() {
   require-env BITWARDEN_FOLDER_ID
 }
 
+find-note-by-id() {
+  local ITEM_NAME="${1}"
+  # Look up exisiting object with a combination of bw CLI fuzzy search and jq filtering
+  bw list items --folderid "${BITWARDEN_FOLDER_ID}" --search "${ITEM_NAME}" | jq -r ".[] | select(.name == \"${ITEM_NAME}\" and .type == 2) | .id"
+}
+
 upsert-password-manager-item() {
   local ITEM_NAME="${1}"
   local FILE_PATH="${2}"
@@ -142,13 +148,13 @@ upsert-password-manager-item() {
   JSON_FILE_CONTENTS="$( jq -Rs '.' ${FILE_PATH} )"
 
   # Look up exisiting object with a combination of bw CLI fuzzy search and jq filtering
-  EXISTING_ITEM_ID="$( bw list items --folderid "${BITWARDEN_FOLDER_ID}" --search "${ITEM_NAME}" | jq -r ".[] | select(.name == \"${ITEM_NAME}\" and .type == 2) | .id" )"
+  EXISTING_ITEM_ID="$( find-note-by-id "${ITEM_NAME}" )"
 
   if [[ -n "${EXISTING_ITEM_ID}" ]]; then
     # Edit the existing item
     bw get item "${EXISTING_ITEM_ID}" | jq ".notes = ${JSON_FILE_CONTENTS}" | bw encode | bw edit item "${EXISTING_ITEM_ID}"
   else
-    # Create a new item
+    # Create a new secure note
     bw get template item | jq ".type = 2 | .secureNote.type = 0 | .notes = ${JSON_FILE_CONTENTS} | .name = \"${ITEM_NAME}\" | .folderId = \"${BITWARDEN_FOLDER_ID}\"" | bw encode | bw create item
   fi
 }
@@ -156,8 +162,12 @@ upsert-password-manager-item() {
 delete-password-manager-item() {
   local ITEM_NAME="${1}"
 
-  find the ID
-  delete it
+  EXISTING_ITEM_ID="$( find-note-by-id "${ITEM_NAME}" )"
+  if [[ -z "${EXISTING_ITEM_ID}" ]]; then
+    exiterr "Item ${ITEM_NAME} not found"
+  fi
+
+  bw delete item "${EXISTING_ITEM_ID}"
 }
 
 list-password-manager-items() {
