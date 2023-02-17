@@ -65,7 +65,7 @@ ensure-password-manager-installed() {
     # Ignore the returned update URL, just reinstall from scratch
     # FIXME: untested
     # do I need to rm the old file first? will this overwrite?
-    echo "Auto-updating Bitwarden CLI"
+    echo "Bitwarden CLI out of date, fetching new version"
     install-bitwarden-cli
   fi
 }
