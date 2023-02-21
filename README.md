@@ -1,12 +1,19 @@
-# Password Manager Dotfile Manager
+# Password Manager.env
 
-No, don't call it a dotfiles manager. It's about local dev env file/secrets sync/storage/backup via. password manager.
+A simple command line utility to sync configuration files holding local development secrets to a password manager.
 
-This is designed to be a super-barebones dotfile manager that stores all of your dotfiles as secure notes in your password manager of choice.
-Simple -- lots of other good options out there but honestly I don't want most of the capabilities that they come with.
-Secure -- you already trust your password manager to store secure values and to synchronize them between computers.
-Private -- honestly, even with encryption or templating, I don't really want my dotfiles in a public git repo, and putting them in a private repo adds another layer of authentication to the setup process.
-Multi-machine -- again, your password manager provides this for you already.
+Easily restore your development environment on a new machine, backup the API keys etc that you need to have a functioning local development environment. Synchronize those changes between multiple machines if applicable.
+
+Functions similarly to a relatively barebones dotfiles manager.
+Relatively barebones in terms of functionality.
+Not a full git repository, no history or branching.
+No templating, encryption, or OS specific flags.
+
+However, by relying on your password manager for storage, it gets a couple of things for free.
+* Synchronized. Multi-machine sync is baked in.
+* Secure. Secure storage for secrets -- that's what you're already using it for.
+* Private. Even with encryption or templating, I don't really want my dotfiles in a public git repo, and storing them in a private repo adds another level of authentication to the process.
+
 If you're just storing your .vimrc or whatever that's fine -- share away, but my development environments often contain secrets that I don't want to just throw into a git repository.
 
 # Dependencies
@@ -15,11 +22,14 @@ This should be usable with minimal dependencies
 
 * apt-based linux (debian, ubuntu, etc) or macOS (do I even need this restriction??)
 * bash
+* md5sum
 
 In addition, to use the one-line install script below, you will need:
 
 * curl
 * tar
+
+Also depending on the password manager you pick -- bitwarden CLI + jq
 
 ## Installing
 
