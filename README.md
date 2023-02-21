@@ -1,5 +1,7 @@
 # Password Manager Dotfile Manager
 
+No, don't call it a dotfiles manager. It's about local dev env file/secrets sync/storage/backup via. password manager.
+
 This is designed to be a super-barebones dotfile manager that stores all of your dotfiles as secure notes in your password manager of choice.
 Simple -- lots of other good options out there but honestly I don't want most of the capabilities that they come with.
 Secure -- you already trust your password manager to store secure values and to synchronize them between computers.
@@ -22,6 +24,8 @@ In addition, to use the one-line install script below, you will need:
 ## Installing
 
     mkdir -p ~/.local/share/dev-init && curl -SsL https://api.github.com/repos/isaacsimmons/password-manager-dotfile-manager/tarball/main | tar xz --strip-components=1 -C ~/.local/share/password-manager-dotfile-manager
+
+TODO: add "install latest release" command too, use github releases
 
 Optional: symlink this somewhere on your path
 
