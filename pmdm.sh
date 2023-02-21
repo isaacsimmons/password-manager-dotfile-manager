@@ -26,9 +26,7 @@ print-usage() {
 }
 
 do-config() {
-
-# TODO: Rip out a ton of this and just make them config things manually?
-
+  # TODO: Rip out a ton of this and just config things manually?
 
   # ask for password manager (default to current value if set)
   PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
@@ -198,10 +196,69 @@ case "${COMMAND}" in
     ;;
   "sync")
     echo "TODO: sync files"
+
+    # File last modified time in the same format as the JSON returned by bw (but what about 1pass??)
+    # Maybe better to go the other way and convert them all into unix timestamps
+    # date -u -r "${ABS_PATH}" "+%Y-%m-%dT%H:%M:%S.%N" | sed -r "s/[0-9]{6}$/Z/"
+
+    # TODO: set the modify timestamps to the password manager ones on clone?
+
+    sync modes: ask, prefer local, prefer saved, last modified?
+    maybe you just have a "clone all missing", a "status", a "clone single"?
+    a "diff"? (vs diff all/status?)
+
+    maybe keep track of "what was the contents the last time I checked it out" in order to have a better automatic resolution option?
+
+    status:
+    list all files
+    local missing
+    local missing + parent directory absent
+    match / up to date
+    different (different local changed, different remote changed, different both changed)
+    # no such thing as "remote missing" since we're enumerating the files stored in the remote
+
+    feel free to use a temp directory (or two)
+    diff -- size, timestamp, full contents / `diff` output, "changed locally", "changed remote", "both changed"
+
+    save/add/store/push
+    get/fetch/clone/load/read/pull
+    sync/status
+
+    I think I like uh.. push/pull/sync/status?
+
+    # maybe no "sync" I don't want too much magic
+
+    pull <no args> -- grab locally anything that is missing locally or that has been changed in the remote but not the local
+    // maybe this is sync? and it can also tell you about files with local modifications at the same time, but not push them?
+
+    pull <file> -- grab locally a single file, interactive prompt if there are local changes that would be overwritten
+    pull --force <file> -- grab locally a single file, overwriting any local changes
+    push <file> -- push to remote a single file, interactive prompt if any remote changes would be overwritten
+    push --force <file> -- push to remote a single file, overwriting any remote changes
+
+    status (or diff? or something) -- just list the status of every tracked file
+
     # check for --prefer-local or --prefer-remote flag
     # loop through everything in password manager vault
     # check if the local file exists
-    #
+    # TODO: check if its like, a symlink and complain? (or is that actually fine?)
+    # if local file is a folder, exiterr
+
+    # list items (get ID/name pairs)
+    # turn item_name back into abs path
+    # get parent folder
+    # if file exists
+    #   check if same
+    #   if same, do nothing
+    #   if conflict mode undefined, prompt and ask
+    # TODO: do I have timestamps on both??
+    #   if conflict mode prefer-local then add
+    #   if conflict mode prefer-remote then check it out
+    # else if parent folder exists
+    #   check it out
+    # else
+    #   print a warning about parent folder ain't exist, skipping file
+    # fi
     ;;
   *)
     echo "Unknown command ${COMMAND}"
