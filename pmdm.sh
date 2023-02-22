@@ -8,6 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/password-manager-dotfile-manager"
 CONFIG_FILE="${CONFIG_DIR}/pmdm.env"
+CONFIG_FILE_TEMPLATE="${SCRIPT_DIR}/pmdm.env.template"
 FILE_HASHES_FILE="${CONFIG_DIR}/pmdm-hashes.txt"
 
 # Define some helper functions
@@ -39,65 +40,6 @@ print-usage() {
   exiterr "Usage message goes here"
 }
 
-do-config() {
-  # TODO: Rip out a ton of this and just config things manually?
-
-  # ask for password manager (default to current value if set)
-  PASSWORD_MANAGER="${PASSWORD_MANAGER:-bw}"
-  read -p "What password manager would you like to use (op, bw) [${PASSWORD_MANAGER}]: " PASSWORD_MANAGER_INPUT
-  PASSWORD_MANAGER="${PASSWORD_MANAGER_INPUT:-$PASSWORD_MANAGER}"
-
-  # Update the config file if they answered anything but the default
-  [[ -n "${PASSWORD_MANAGER_INPUT}" ]] && write-config
-
-  # Apply a default if the root directories aren't yet set
-  if [[ -z "${PMDM_ROOT_DIRECTORIES:-}" ]]; then
-    PMDM_ROOT_DIRECTORIES="[HOME]=\"${HOME}\""
-    write-config
-  fi
-
-  require-env PMDM_ROOT_DIRECTORIES
-  eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
-
-  echo "Any files stored in named root directories will be referred to by relative path instead of absolute path"
-  while true; do
-    # Print existing directories
-    for ALIAS_PREFIX in "${!ROOT_DIRECTORY_MAP[@]}"
-    do
-      echo "[${ALIAS_PREFIX}] ${ROOT_DIRECTORY_MAP[$ALIAS_PREFIX]}"
-    done
-
-    read -p "Enter an existing alias to modify or delete it, a new alias to create a new root directory, or nothing to continue: " ALIAS_INPUT
-    if [[ -z "${ALIAS_INPUT}" ]]; then
-      break;
-    fi
-
-    if [[ -n "${ROOT_DIRECTORY_MAP[${ALIAS_INPUT}]:-}" ]]; then # An existing alias
-      read -p "Enter a new absolute path to modify ${ALIAS_INPUT} or leave blank to remove: " PATH_INPUT
-      if [[ -z "${PATH_INPUT}" ]]; then
-        # Remove an existing value
-        unset ROOT_DIRECTORY_MAP[$ALIAS_INPUT]
-      else
-        # Update an existing value
-        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="${PATH_INPUT}"
-      fi
-    else # Add a new value (fix these comments)
-      read -p "Enter absolute path for ${ALIAS_INPUT}: " PATH_INPUT
-      if [[ -n "${PATH_INPUT}" ]]; then
-        ROOT_DIRECTORY_MAP[$ALIAS_INPUT]="${PATH_INPUT}"
-      fi
-    fi
-
-    PMDM_ROOT_DIRECTORIES="$( declare -p ROOT_DIRECTORY_MAP | sed 's/^.*(//;s/)$//' )"
-    write-config
-  done
-
-  source-password-manager-implementation
-  ensure-password-manager-installed
-  ensure-password-manager-logged-in
-  configure-password-manager
-}
-
 source-password-manager-implementation() {
   require-env PASSWORD_MANAGER
   case "${PASSWORD_MANAGER}" in
@@ -111,12 +53,6 @@ source-password-manager-implementation() {
       exiterr "Unknown password manager ${PASSWORD_MANAGER}"
       ;;
   esac
-}
-
-write-config() {
-  echo "PASSWORD_MANAGER=\"${PASSWORD_MANAGER:-}\"
-PMDM_ROOT_DIRECTORIES=\"$( echo "${PMDM_ROOT_DIRECTORIES}" | sed "s/\"/\\\\\"/g")\"
-" > "${CONFIG_FILE}"
 }
 
 # Takes an absolute filesystem path and checks it against the ROOT_DIRECTORY aliases, possibly shortening it
@@ -253,23 +189,13 @@ pull-all() {
 
 # Create my own config dir if needed
 [[ -d "${CONFIG_DIR}" ]] || mkdir -p "${CONFIG_DIR}"
-# If config file exists, source it
-[[ -f "${CONFIG_FILE}" ]] && source "${CONFIG_FILE}"
+# Copy template config file if none exists yet
+[[ -f "${CONFIG_FILE}" ]] || cp "${CONFIG_FILE_TEMPLATE}" "${CONFIG_FILE}"
+# Source config file
+source "${CONFIG_FILE}"
 
 # Ensure some dependencies are installed
 command -v md5sum &> /dev/null || exiterr "md5sum command not found. Please install it"
-
-COMMAND="${1:-}"
-shift
-
-[[ -n "$COMMAND" ]] || print-usage
-
-# TODO: remove
-# Special check for "config" command first before we make assertions about being properly configured
-if [[ "${COMMAND}" == "config" ]]; then
-  do-config
-  exit 0
-fi
 
 source-password-manager-implementation
 
@@ -281,6 +207,11 @@ eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
 ensure-password-manager-installed
 ensure-password-manager-logged-in
 assert-password-manager-configured
+
+# Parse args and process commands
+COMMAND="${1:-}"
+shift
+[[ -n "$COMMAND" ]] || print-usage
 
 # then a big case statement for $COMMAND and do the thing that was asked of me
 case "${COMMAND}" in

@@ -2,14 +2,6 @@
 # This is intended to be sourced by the main pmdm.sh script and will not work
 [ "${BASH_SOURCE[0]}" -ef "$0" ] && (>&2echo "Don't invoke this directly"; exit 1)
 
-BITWARDEN_CONFIG_FILE="${CONFIG_DIR}/pmdm-bitwarden.env"
-
-write-password-manager-config() {
-  echo "BITWARDEN_EMAIL=\"${BITWARDEN_EMAIL:-}\"
-BITWARDEN_FOLDER_ID=\"${BITWARDEN_FOLDER_ID:-}\"
-" > "${BITWARDEN_CONFIG_FILE}"
-}
-
 install-bitwarden-cli() {
   echo -n "Installing bitwarden CLI..."
   [[ "$(getconf LONG_BIT)" == "64" ]] || exiterr "Unsupported architecture. Please install bitwarden CLI manually"
@@ -81,52 +73,6 @@ ensure-password-manager-logged-in() {
     export BW_SESSION="$(bw login "{$BITWARDEN_EMAIL}" --raw)"
   elif ! bw unlock --check &> /dev/null; then
     export BW_SESSION="$(bw unlock --raw)"
-  fi
-}
-
-configure-password-manager() {
-  local DEFAULT_FOLDER_NAME="dotfiles"
-  # TODO: scope a ton of variables in all these files as 'local'?
-
-  ID_MATCH_ROW=""
-  DEFAULT_NAME_MATCH_ROW=""
-  echo "Select a folder for pmdm to store its data in:"
-
-  OLD_FOLDER_ID="${BITWARDEN_FOLDER_ID:-}"
-
-  ROW=1
-  while read FOLDER_LINE; do
-    # Split the line to get ID and Name
-    FOLDER_ID="$( echo "${FOLDER_LINE}" | cut -d: -f1 )"
-    FOLDER_NAME="$( echo "${FOLDER_LINE}" | cut -d: -f2- )"
-
-    # Check for rows matching the existing folder or the default folder name
-    if [[ "${FOLDER_ID}" == "${BITWARDEN_FOLDER_ID:-}" ]]; then
-      ID_MATCH_ROW="${ROW}"
-    elif [[ "${FOLDER_NAME}" == "${DEFAULT_FOLDER_NAME}" ]]; then
-      DEFAULT_NAME_MATCH_ROW="${ROW}"
-    fi
-
-    # Store the IDs for later
-    FOLDER_IDS[$ROW]="${FOLDER_ID}"
-
-    # Write row prompt
-    echo "[${ROW}] ${FOLDER_NAME}"
-    ROW=$((ROW + 1))
-  done <<<$(bw list folders | jq -r ".[] | .id + \":\" + .name" | grep -v "No Folder")
-  PROMPT_DEFAULT="${ID_MATCH_ROW:-${DEFAULT_NAME_MATCH_ROW:-${DEFAULT_FOLDER_NAME}}}"
-  read -p "Select existing by line number or enter a name to create a new folder [${PROMPT_DEFAULT}]:" RAW_FOLDER_INPUT
-  FOLDER_INPUT="${RAW_FOLDER_INPUT:-${PROMPT_DEFAULT}}"
-
-  if [[ "${FOLDER_INPUT}" =~ ^[0-9]+$ ]]; then # They entered a number, treat as id of an existing folder
-    # TODO: do I need an "export" to use this immediately? (also, maybe I don't care?)
-    BITWARDEN_FOLDER_ID="${FOLDER_IDS[$FOLDER_INPUT]}"
-  else # Not a number, must be a name for a new folder
-    BITWARDEN_FOLDER_ID="$( bw get template folder | jq ".name=\"${FOLDER_INPUT}\"" | bw encode | bw create folder | jq -r ".id" )"
-  fi
-
-  if [[ "${OLD_FOLDER_ID}" != "${BITWARDEN_FOLDER_ID}" ]]; then
-    write-password-manager-config
   fi
 }
 
