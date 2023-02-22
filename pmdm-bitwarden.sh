@@ -1,6 +1,6 @@
 # Guard against direct execution
-# This is intended to be sourced by the main pmdm.sh script and will not work
-[ "${BASH_SOURCE[0]}" -ef "$0" ] && (>&2echo "Don't invoke this directly"; exit 1)
+# This is intended to be sourced by the main pmdm.sh script and will not work on its own
+[ "${BASH_SOURCE[0]}" -ef "$0" ] && (>&2echo "Don't invoke this file directly"; exit 1)
 
 install-bitwarden-cli() {
   echo -n "Installing bitwarden CLI..."
@@ -123,11 +123,7 @@ list-password-manager-items() {
 get-password-manager-item() {
   local ITEM_NAME="${1}"
   local FILE_PATH="${2}"
-
 }
-
-# something for sync?
-# is it just a combination of "list" and "check if its changed", "get" and "upsert"
 
 
 # Done Function Definitions

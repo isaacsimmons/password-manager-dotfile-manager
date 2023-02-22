@@ -78,12 +78,8 @@ to-item-name() {
 from-item-name() {
   local ITEM_NAME="${1}"
 
-  # TODO: this
-  ALIAS_PREFIX=""
-  PATH_REMAINDER=""
-
+  IFS='/' read -r ALIAS_PREFIX PATH_REMAINDER <<< "${ITEM_NAME}"
   ALIAS_PATH="${ROOT_DIRECTORY_MAP[$ALIAS_PREFIX]%/}" # Drop trailing / if one was present
-
   echo "${ALIAS_PATH}/${PATH_REMAINDER}"
 }
 
@@ -205,9 +201,9 @@ ROOT_DIRECTORY_MAP[HOME]="${HOME}"
 if [[ -n "${PMDM_ROOT_DIRECTORIES}" ]]; then
   while IFS=':' read -ra ROOT_DIRECTORY_LINES; do
     for ROOT_DIRECTORY_LINE in "${ROOT_DIRECTORY_LINES[@]}"; do
-      IFS='=' read -r ALIAS PATH <<< "${ROOT_DIRECTORY_LINE}"
+      IFS='=' read -r ROOT_DIRECTORY_ALIAS ROOT_DIRECTORY_PATH <<< "${ROOT_DIRECTORY_LINE}"
       # TODO: test all this stuff with directories and filenames that contain spaces or equals
-      ROOT_DIRECTORY_MAP[$ALIAS]="${PATH}"
+      ROOT_DIRECTORY_MAP[$ROOT_DIRECTORY_ALIAS]="${ROOT_DIRECTORY_PATH}"
     done
   done <<< "${PMDM_ROOT_DIRECTORIES}"
 fi
@@ -223,6 +219,15 @@ shift
 
 # then a big case statement for $COMMAND and do the thing that was asked of me
 case "${COMMAND}" in
+  "testing")
+    # echo "TESTING"
+    REL_PATH="${1}"
+    ABS_PATH="$( to-abs-path "${REL_PATH}" )"
+    ITEM_NAME="$( to-item-name "${ABS_PATH}" )"
+    ABS_PATH_2="$( from-item-name "${ITEM_NAME}" )"
+    REL_PATH_2="$( to-rel-path "${ABS_PATH_2}" )"
+    echo "$REL_PATH ==> $ABS_PATH ==> $ITEM_NAME ==> $ABS_PATH_2 ==> $REL_PATH_2"
+    ;;
   "push")
     # add a new file or update an existing file
     # immediately push to password manager
