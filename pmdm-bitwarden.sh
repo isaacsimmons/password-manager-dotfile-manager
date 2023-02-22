@@ -63,11 +63,7 @@ ensure-password-manager-installed() {
 }
 
 ensure-password-manager-logged-in() {
-  if [[ -z "${BITWARDEN_EMAIL:-}" ]]; then
-    read -p "What is your bitwarden email: " BITWARDEN_EMAIL
-    [[ -z "${BITWARDEN_EMAIL}" ]] && exiterr "Unable to read bitwarden email"
-    write-password-manager-config
-  fi
+  require-env "BITWARDEN_EMAIL"
 
   if ! bw login --check &> /dev/null; then
     export BW_SESSION="$(bw login "{$BITWARDEN_EMAIL}" --raw)"
@@ -135,8 +131,5 @@ get-password-manager-item() {
 
 
 # Done Function Definitions
-
-# If config file exists, source it
-[[ -f "${BITWARDEN_CONFIG_FILE}" ]] && source "${BITWARDEN_CONFIG_FILE}"
 
 # TODO: bw config server https://self.hosted.server.hostname

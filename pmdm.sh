@@ -5,8 +5,8 @@ set -euo pipefail
 #TODO: apply consistent style guide (Google Shell Styleguide, ShellCheck, etc)
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
 CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/password-manager-dotfile-manager"
+
 CONFIG_FILE="${CONFIG_DIR}/pmdm.env"
 CONFIG_FILE_TEMPLATE="${SCRIPT_DIR}/pmdm.env.template"
 FILE_HASHES_FILE="${CONFIG_DIR}/pmdm-hashes.txt"
@@ -21,13 +21,11 @@ store-file-hash() {
   local ITEM_NAME="${1}"
   local FILE_PATH="${2}"
 
-  # FIXME: ensure md5sum is installed in the setup steps
   FILE_HASH="$( md5sum "${FILE_PATH}" | head -c32 )"
 
   touch "${FILE_HASHES_FILE}"
 
-
-
+  # TODO: remove any existing hash, insert the new one
 }
 
 require-env() {
@@ -199,10 +197,20 @@ command -v md5sum &> /dev/null || exiterr "md5sum command not found. Please inst
 
 source-password-manager-implementation
 
-# TODO: re-format ROOT_DIRECTORIES to be ALIAS=/path:ALIAS2=/path/2
-require-env PMDM_ROOT_DIRECTORIES
-# TODO: parse root_directories here manually
-eval "declare -A ROOT_DIRECTORY_MAP=( ${PMDM_ROOT_DIRECTORIES} )"
+# Initialize with default "HOME" alias
+declare -A ROOT_DIRECTORY_MAP
+ROOT_DIRECTORY_MAP[HOME]="${HOME}"
+
+# If the config value is present, read additional path aliases out of it (including possible an override for HOME)
+if [[ -n "${PMDM_ROOT_DIRECTORIES}" ]]; then
+  while IFS=':' read -ra ROOT_DIRECTORY_LINES; do
+    for ROOT_DIRECTORY_LINE in "${ROOT_DIRECTORY_LINES[@]}"; do
+      IFS='=' read -r ALIAS PATH <<< "${ROOT_DIRECTORY_LINE}"
+      # TODO: test all this stuff with directories and filenames that contain spaces or equals
+      ROOT_DIRECTORY_MAP[$ALIAS]="${PATH}"
+    done
+  done <<< "${PMDM_ROOT_DIRECTORIES}"
+fi
 
 ensure-password-manager-installed
 ensure-password-manager-logged-in
