@@ -54,7 +54,7 @@ source-password-manager-implementation() {
 }
 
 # Takes an absolute filesystem path and checks it against the ROOT_DIRECTORY aliases, possibly shortening it
-create-item-name() {
+to-item-name() {
   local ABS_PATH="${1}"
 
   # Since prefixes can be subsets of eachother, look for the most specific/longest matching one
@@ -148,7 +148,7 @@ push-one() {
   # push --force <file> push file overwriting changes in the repo
 
   ABS_PATH="$( to-abs-path "${REL_PATH}" )"
-  ITEM_NAME="$( create-item-name "${ABS_PATH}" )"
+  ITEM_NAME="$( to-item-name "${ABS_PATH}" )"
 
   # remote doesn't exist -- add new
   # remote exists and matches -- no-op, already up to date
@@ -260,7 +260,7 @@ case "${COMMAND}" in
     [[ -z "${1:-}" ]] && print-usage
 
     ABS_PATH="$( to-abs-path "$1" )"
-    ITEM_NAME="$( create-item-name "$ABS_PATH" )"
+    ITEM_NAME="$( to-item-name "$ABS_PATH" )"
 
     delete-password-manager-item "${ITEM_NAME}"
     ;;
