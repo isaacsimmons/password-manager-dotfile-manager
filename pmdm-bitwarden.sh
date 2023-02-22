@@ -75,6 +75,8 @@ ensure-password-manager-logged-in() {
 assert-password-manager-configured() {
   require-env BITWARDEN_EMAIL
   require-env BITWARDEN_FOLDER_ID
+  # TODO: switch this from "FOLDER_ID" to "FOLDER" and fetch the former given the latter
+  # require-env BITWARDEN_FOLDER
 }
 
 find-note-by-id() {
