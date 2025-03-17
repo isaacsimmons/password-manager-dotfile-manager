@@ -2,7 +2,8 @@
 
 A simple command line utility to sync configuration files holding local development secrets to a password manager.
 
-Easily restore your development environment on a new machine, backup the API keys etc that you need to have a functioning local development environment. Synchronize those changes between multiple machines if applicable.
+Easily restore your development environment on a new machine, backup the API keys etc that you need to have a functioning local development environment.
+Synchronize those changes between multiple machines if applicable.
 
 Functions similarly to a relatively barebones dotfiles manager.
 Relatively barebones in terms of functionality.
@@ -54,8 +55,6 @@ pmdm.env
 
 ## Usage
 
-pmdm config (interactive)
-  // what base directory? (default home) (files outside of this directory will expect the same full path on all systems), what password manager, okay make sure the CLI is installed, any "extra args" (self-hosted BW for instance), okay log in to it, what vault, what folder/tag
 pmdm add <path> (add a new file or update an existing file in password manager)
 pmdm sync (interactive)
 pmdm sync --prefer-upstream
@@ -64,7 +63,7 @@ pmdm rm <path>
 // TODO: difference between removing it from the local filesystem/unlinking it and purging it from the password manager?
 // TODO: what does unlinking look like? probably an entry in pmdm.env? (nah, a new local-only "files-to-skip.txt" or some such)
 
-Note: this won't warn you about any conflicts when pushing, it'll just overwrite with whichever you specify
+Warning: this won't warn you about any conflicts when pushing, it'll just overwrite with whichever you specify
 
 Note: These instructions assume that you have symlinked the script such that it is available on your path.
 If you have not, simply replace `pmdm` with `~/.local/config/password-manager-dotfiles-manager/pmdm.sh` in the commands.
